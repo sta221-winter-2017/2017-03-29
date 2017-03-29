@@ -1,0 +1,287 @@
+---
+title: "STA221"
+author: "Neil Montgomery"
+date: "Last edited: `r format(Sys.time(), '%Y-%m-%d %H:%M')`"
+output: 
+  beamer_presentation:
+    keep_tex: TRUE
+    incremental: TRUE
+#    df_print: tibble
+    fig_caption: FALSE
+classoption: aspectratio=169
+header-includes:
+- \newcommand{\ve}{\varepsilon}
+- \newcommand{\dbar}[1]{\overline{\overline{#1}}}
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE,
+                      dev='pdf', fig.width=5, fig.asp=0.618, fig.align='center')
+options(tibble.width=70, tibble.print_min=5, show.signif.stars = FALSE)
+library(tidyverse)
+```
+
+
+```{r}
+data(trees)
+trees <- as_tibble(trees)
+```
+
+## trees data fitted model
+
+Here's what `R` produces:
+
+```{r}
+library(xtable)
+source("multiplot.R")
+trees_fit <- trees %>% 
+  lm(Volume ~ Girth + Height, data = .)
+short_print_lm(summary(trees_fit))
+```
+
+## individual slope parameter hypothesis testing
+
+The usual hypothesis test for a single parameter:
+\begin{align*}
+H_0: \beta_i &= 0\\
+H_a: \beta_i &\ne 0
+\end{align*}
+
+\pause If $H_0$ is true, it means the $i$th variable ($x_i$) is 
+not significantly related to $y$
+
+\pause \textit{\textbf{given all the other $x$'s in the model}}
+
+## the overall hypothesis test
+
+"Is there any linear relationship between $y$ and the input variables?"
+
+\pause Null hypothesis can be expressed as:
+$$H_0: \beta_1 = \beta_2 = \cdots = \beta_k = 0$$
+
+\pause It is also possible to test any subset of these parameters, such as:
+$$H_0: \beta_1 = \beta_2 = 0$$
+although at the moment it's not clear why this might be a good idea.
+
+## estimating $\sigma$
+
+This works the same as with simple regression, in which we used $\sqrt{MSE}$ where:
+$$MSE = \frac{\sum\limits_{j=1}^n \left(y_j - \hat{y}_j\right)^2}{n - 2}$$
+
+\pause $n-2$ was the sample size minus the number of parameters (two: $\beta_0$ and $\beta_1$) being estimated. 
+
+\pause There was only one input variable, so another way to think of this was "sample size minus the number of input variables, then minus 1."
+
+## estimating $\sigma$
+
+In multiple regression, nothing changes. Use $\sqrt{MSE}$, where:
+$$MSE = \frac{\sum\limits_{j=1}^n \left(y_j - \hat{y}_j\right)^2}{n - (k+1)}$$
+
+## hypothesis testing for $\beta_i$
+
+The computer produces the estimate $b_i$, which has these properties:
+\begin{align*}
+E(b_i) &= \beta_i\\
+\text{Var}(b_i) &= \sigma\cdot c_i
+\end{align*}
+
+\pause $c_i$ is a number that reflects the relationships between $x_i$ and the other inputs (to be revisited).
+
+\pause Just like before, we get:
+$$\frac{b_i - \beta_i}{\sqrt{MSE}\sqrt{c_i}} \sim t_{n-{k+1}}$$
+
+## hypothesis testing for $\beta_i$ in the trees example
+
+```{r}
+short_print_lm(summary(trees_fit))
+```
+
+## the overall $F$ test
+
+"Is there any linear relationship between $y$ and the input variables?"
+
+Based on the same, original SS decomposition. 
+
+$$\text{variation in the $y$ } = \text{ variation due to the model } + \text{ variation due to error }$$
+
+\begin{align*}
+\sum (y_i - \overline y)^2 &= \onslide<2->{\sum (\hat y_i - \overline y)^2}
++ \onslide<3->{\sum ( y_i - \hat y_i)^2\\}
+\onslide<4->{SS_{Total} &= SS_{Regression} + SS_{Error}}\\
+\onslide<5->{\chi^2}\onslide<6->{\raisebox{-2pt}{$\!\!_{n-1}$}} \onslide<5->{&=} \onslide<5->{\chi^2}\onslide<7->{\raisebox{-2pt}{$\!\!_{k}$}} \onslide<5->{+} \onslide<5->{\chi^2}\onslide<8->{\raisebox{-2pt}{$\!\!_{n-k-1}$}}
+\end{align*}
+
+\pause\pause\pause\pause\pause\pause\pause\pause The p-value then comes from:
+$$\frac{SS_{Regression}/k}{SS_{Total}/(n-k-1)} = \frac{MSR}{MSE} \sim F_{k, n-k-1}$$
+
+## the overall $F$ test - trees example
+
+The information is in the usual `R` output:
+
+```{r}
+short_print_lm(summary(trees_fit), bottom.only = TRUE)
+```
+
+One can obtain an "ANOVA" table from this information:
+
+```{r}
+library(broom)
+trees_gl <- glance(trees_fit)
+df1 <- trees_gl$df - 1
+df2 <- trees_gl$df.residual
+MSE <- trees_gl$sigma^2
+SSE <- MSE*df2
+r2 <- trees_gl$r.squared
+SSR <- r2/(1-r2)*SSE
+MSR <- SSR/df1
+F.value <- trees_gl$statistic
+p <- trees_gl$p.value
+options(digits=2)
+```
+
+
+\begin{table}[h!]
+\ttfamily
+\begin{tabular}{lrrrrr}
+ & Df & Sum Sq & Mean Sq & F value & Pr($>$F)\\
+Regression & \onslide<2->{`r df1`} & \onslide<6->{`r SSR`} & \onslide<5->{`r MSR`} & \onslide<3->{`r F.value` & $`r p`$}\\
+Error & \onslide<2->{`r df2`} & \onslide<6->{`r SSE`} & \onslide<4->{`r MSE` & &} \\
+\end{tabular}\\[0.2cm]
+\onslide<4-4>{MSE = Square of the `Residual standard error'\hfill}
+\end{table}
+
+## model assumptions and calculation requirements
+
+Model:
+$$y = \beta_0 + \beta_1 x_1 + \cdots + \beta_k x_k + \ve, \qquad \ve\sim N(0,\sigma)$$
+
+Pretty much the same as with simple regression.
+
+\pause First, there's the independence assumption, which can't really be verified without knowledge of the data collection itself (common violation - repeated measures.)
+
+The main ones to worry about are:
+
+1. The linear model is appropriate (fatal if violated).
+
+2. The variance is constant (fatal if violated).
+
+3. The error is normal (OK if sample size is large "enough").
+
+\pause 1. and 2. are verified with a plot of residuals versus fitted values, and 3. is verified with a normal quantile plot of the residuals.
+
+## residuals versus fitted values - trees example (fatal)
+
+```{r}
+augment(trees_fit) %>% 
+  ggplot(aes(x=.fitted, y=.resid)) + geom_point()
+```
+
+## not surprising, since the model was obviously wrong
+
+If you really wanted to model the $y=$`Volume` of wood using $x_1=$`Girth` and $x_2=$`Height`, you need to include the square of `Girth`, because of the volume-of-a-cylinder formula $V = \pi r^2 h$.
+
+So let's fit the model:
+$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1^2 + \ve$$
+
+\pause A few comments:
+
+1. Order of input variables doesn't matter. It can be nice to "add" variables at the end, so that when comparing this model with
+$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \ve$$
+the original $\beta$'s are at least conceptually similar.
+
+2. When adding squares of variables (etc.), usually best to keep the original in the model as well.
+
+## new trees model fit
+
+```{r}
+trees_fit2 <- lm(Volume ~ Girth + I(Girth^2) + Height, data=trees)
+short_print_lm(summary(trees_fit2))
+```
+
+## new trees model resids v. fits
+
+```{r}
+augment(trees_fit2) %>% 
+  ggplot(aes(x=.fitted, y=.resid)) + geom_point()
+```
+
+## normal quantile plot of residuals
+
+```{r}
+augment(trees_fit2) %>% 
+  ggplot(aes(sample=.resid)) + geom_qq()
+```
+
+## towards an "adjusted" $R^2$
+
+$R^2$ comes from dividing $SS_{Total}$ through the SS decomposition:
+$$SS_{Total} = SS_{Regression} + SS_{Error}$$
+The definition $R^2 = SSR/SST = 1-SSE/SST$ is the same no matter how many input variables there are.
+
+\pause One use of $R^2$ is to compare two different regression models...
+
+...but the problem is that $R^2$ always goes up when you add any new input variable to the model. This is because $$SS_{Error}$$ always goes down with a new variable added.
+
+\pause For example, I can add a pure nonsense $x_4$ variable to the trees data and fit the "bigger" model.
+
+## trees vs. trees plus nonsense
+
+The last best model we had:
+
+```{r}
+short_print_lm(summary(trees_fit2), bottom.only = TRUE)
+```
+
+\pause With a `Nonsense` (randomly generated) variable added:
+
+```{r}
+set.seed(4)
+trees$Nonsense <- rnorm(nrow(trees), 0, 0.1)
+short_print_lm(summary(lm(Volume ~ Girth + I(Girth^2) + Height + Nonsense, data=trees)), 
+               bottom.only = TRUE)
+```
+
+## adjusting $R^2$ for the number of input variables
+
+A more fair (but still not perfect) single-number-summary of a multiple regression fit is:
+
+$$R^2_{adj} = 1 - \frac{MS_{Error}}{MS_{Total}}$$
+
+where $MS_{Total}$ is just another name for the sample variance of the output $y$ values:
+$$MS_{Total} = \frac{SS_{Total}}{n-1} = \frac{\sum\limits_{i=1}^n \left(y_i - \overline y\right)^2}{n-1}$$
+
+\pause The adjustment works on the basis of this trade-off: while $SS_{Error}$$ goes down, the error degrees of freedom also goes down.
+
+$R^2_{adj}$ will play more of a role in the next topic---model selection
+
+## model selection preview
+
+Recall the Body Fat \% dataset. 
+
+```{r}
+bodyfat <- read_csv("Body_fat.csv")
+bodyfat
+```
+
+## model selection preview
+
+We had considered these two simple regression models:
+
+```{r}
+wt <- bodyfat %>% lm(`Pct BF` ~ Weight, data=.)
+ht <- bodyfat %>% lm(`Pct BF` ~ Height, data=.)
+short_print_lm(summary(wt), short=TRUE)
+short_print_lm(summary(ht), short=TRUE)
+```
+
+## model selection preview
+
+Model with both. Is this a contradiction?
+
+```{r}
+bodyfat %>% 
+  lm(`Pct BF` ~ Weight + Height, data=.) %>% 
+  summary() %>% 
+  short_print_lm()
+```
+
