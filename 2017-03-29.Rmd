@@ -82,13 +82,13 @@ $$MSE = \frac{\sum\limits_{j=1}^n \left(y_j - \hat{y}_j\right)^2}{n - (k+1)}$$
 The computer produces the estimate $b_i$, which has these properties:
 \begin{align*}
 E(b_i) &= \beta_i\\
-\text{Var}(b_i) &= \sigma\cdot c_i
+\text{Var}(b_i) &= \sigma^2\cdot c_i
 \end{align*}
 
 \pause $c_i$ is a number that reflects the relationships between $x_i$ and the other inputs (to be revisited).
 
 \pause Just like before, we get:
-$$\frac{b_i - \beta_i}{\sqrt{MSE}\sqrt{c_i}} \sim t_{n-{k+1}}$$
+$$\frac{b_i - \beta_i}{\sqrt{MSE}\sqrt{c_i}} \sim t_{n-(k+1)}$$
 
 ## hypothesis testing for $\beta_i$ in the trees example
 
