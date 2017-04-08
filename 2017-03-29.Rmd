@@ -111,8 +111,8 @@ $$\text{variation in the $y$ } = \text{ variation due to the model } + \text{ va
 \onslide<5->{\chi^2}\onslide<6->{\raisebox{-2pt}{$\!\!_{n-1}$}} \onslide<5->{&=} \onslide<5->{\chi^2}\onslide<7->{\raisebox{-2pt}{$\!\!_{k}$}} \onslide<5->{+} \onslide<5->{\chi^2}\onslide<8->{\raisebox{-2pt}{$\!\!_{n-k-1}$}}
 \end{align*}
 
-\pause\pause\pause\pause\pause\pause\pause\pause The p-value then comes from:
-$$\frac{SS_{Regression}/k}{SS_{Total}/(n-k-1)} = \frac{MSR}{MSE} \sim F_{k, n-k-1}$$
+\pause\pause\pause\pause\pause\pause\pause\pause The p-value then comes from \textbf{CORRECTED 2017-04-08}:
+$$\frac{SS_{Regression}/k}{SS_{Error}/(n-k-1)} = \frac{MSR}{MSE} \sim F_{k, n-k-1}$$
 
 ## the overall $F$ test - trees example
 
